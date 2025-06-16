@@ -1,75 +1,43 @@
-import tasksmodel from "../models/tasks.js";
-import { v2 as cloudinary } from "cloudinary";
+const tasksController = {};
+import tasksModel from "../models/tasks.js";
 
-import { config } from "../config.js";
-
-//1- Configurar cloudinary
-cloudinary.config({
-  cloud_name: config.cloudinary.cloudinary_name,
-  api_key: config.cloudinary.cloudinary_api_key,
-  api_secret: config.cloudinary.cloudinary_api_secret,
-});
-
-// Array de funciones vacio
-const blogController = {};
-
-//Select
-blogController.getAllBlog = async (req, res) => {
-  const blogs = await blogModel.find();
-  res.json(blogs);
+// SELECT
+tasksController.gettasks = async (req, res) => {
+  const tasks = await tasksModel.find();
+  res.json(tasks);
 };
 
-//Guardar
-blogController.createBlog = async (req, res) => {
-  try {
-    const { title, content } = req.body;
-    let imageUrl = "";
+// INSERT
+tasksController.createtasks = async (req, res) => {
+  const { tittle, description, completed } = req.body;
+  const newtasks = new tasksModel({ tittle, description, completed });
+  await newtasks.save();
+  res.json({ message: "task saved" });
+};
 
-    if (req.file) {
-      //Subir el archivo a Cloudinary
-      const result = await cloudinary.uploader.upload(
-        req.file.path, 
-        {
-        folder: "public",
-        allowed_formats: ["jpg", "png", "jpeg"],
-        });
-      imageUrl = result.secure_url;
-    }
-
-    const newBlog = new blogModel({ title, content, image: imageUrl });
-    newBlog.save();
-
-    res.json({ message: "Blog saved" });
-  } catch (error) {
-    console.log("error" + error);
+// DELETE
+tasksController.deletetasks = async (req, res) => {
+const deletedtasks = await tasksModel.findByIdAndDelete(req.params.id);
+  if (!deletedtasks) {
+    return res.status(404).json({ message: "tasks weren't found" });
   }
+  res.json({ message: "task deleted" });
 };
 
-blogController.updateBlog = async (req, res) => {
-  try {
-    const { title, content } = req.body;
-    let imageUrl = "";
-
-    if (req.file) {
-      //Subir el archivo a Cloudinary
-      const result = await cloudinary.uploader.upload(req.file.path, 
-        {
-        folder: "public",
-        allowed_formats: ["jpg", "png", "jpeg"],
-        });
-      imageUrl = result.secure_url;
-    }
-
-    await blogModel.findByIdAndUpdate(req.params.id,
-       {
-        title, content, image: imageUrl
-       }, {new: true}
-      )
-
-    res.json({ message: "Blog updated" });
-  } catch (error) {
-    console.log("error" + error);
-  }
+// UPDATE
+tasksController.updatetasks = async (req, res) => {
+  // Solicito todos los valores
+  const { tittle, description, completed  } = req.body;
+  // Actualizo
+  await tasksModel.findByIdAndUpdate(
+    req.params.id,
+    {
+        tittle, description, completed 
+    },
+    { new: true }
+  );
+  // muestro un mensaje que todo se actualizo
+  res.json({ message: "task updated" });
 };
 
-export default blogController;
+export default tasksController;
